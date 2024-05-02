@@ -14,6 +14,7 @@ int main(int argc , char *argv[])
     int connSize; // Size of struct 
     int READSIZE;  // Size of sockaddr_in for client connection
     char fileBuffer[FILE_BUFFER_SIZE] = {0};
+    char fileName[FILE_BUFFER_SIZE];
     FILE* file;
 
     struct sockaddr_in server , client;
@@ -56,13 +57,18 @@ int main(int argc , char *argv[])
     } else {
     	printf("Connection from client accepted.\n");
     }
-    
-    file = fopen("receivedFile", "wb");
+
+    //Receive file name
+    recv(clientSocket, fileName, FILE_BUFFER_SIZE, 0);
+
+    //Open file for writing
+    file = fopen(fileName, "wb");
     if (file == NULL) {
         printf("Error creating file");
         return 1;
-    }
+    }  
 
+    //Receive file line by line
     while (recv(clientSocket, fileBuffer, FILE_BUFFER_SIZE, 0) > 0) {
         fputs(fileBuffer, file);
     }
