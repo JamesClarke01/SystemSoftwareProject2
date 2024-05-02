@@ -3,20 +3,25 @@
 #include <sys/socket.h> // for socket
 #include <arpa/inet.h>  //for inet_addr
 #include <unistd.h>     //for write
- 
+
+#define PORT 8082
+#define FILE_BUFFER_SIZE 1024
+
 int main(int argc , char *argv[])
 {
-    int s; // socket descriptor
-    int cs; // Client Socket
+    int serverSocket; // socket descriptor
+    int clientSocket; // Client Socket
     int connSize; // Size of struct 
     int READSIZE;  // Size of sockaddr_in for client connection
+    char fileBuffer[FILE_BUFFER_SIZE] = {0};
+    FILE* file;
 
     struct sockaddr_in server , client;
     char message[500];
      
     //Create socket
-    s = socket(AF_INET , SOCK_STREAM , 0);
-    if (s == -1)
+    serverSocket = socket(AF_INET , SOCK_STREAM , 0);
+    if (serverSocket == -1)
     {
         printf("Could not create socket.\n");
     } else {
@@ -24,15 +29,13 @@ int main(int argc , char *argv[])
     } 
 
     // set sockaddr_in variables
-    server.sin_port = htons( 8080 ); // Set the prot for communication
+    server.sin_port = htons(PORT); // Set the prot for communication
     server.sin_family = AF_INET; // Use IPV4 protocol
     server.sin_addr.s_addr = INADDR_ANY; 
     // When INADDR_ANY is specified in the bind call, the  socket will  be bound to all local interfaces. 
-    
      
     //Bind
-    if( bind(s,(struct sockaddr *)&server , sizeof(server)) < 0)
-    {
+    if( bind(serverSocket,(struct sockaddr *)&server , sizeof(server)) < 0) {
         perror("Bind issue.\n");
         return 1;
     } else {
@@ -40,44 +43,34 @@ int main(int argc , char *argv[])
     }
      
     //Listen for a conection
-    listen(s,3); 
+    listen(serverSocket,3); 
     //Accept and incoming connection
     printf("Waiting for incoming connection from Client>>\n");
     connSize = sizeof(struct sockaddr_in);
      
     //accept connection from an incoming client
-    cs = accept(s, (struct sockaddr *)&client, (socklen_t*)&connSize);
-    if (cs < 0)
-    {
+    clientSocket = accept(serverSocket, (struct sockaddr *)&client, (socklen_t*)&connSize);
+    if (clientSocket < 0) {
         perror("Can't establish connection");
         return 1;
     } else {
     	printf("Connection from client accepted.\n");
     }
-     
-    //Receive message from client
-    /*while( (READSIZE = recv(cs , message , 1999 , 0)) > 0 )
-    {
-        //Send the message back to client
-        write(cs , message , strlen(message));
-    }*/
     
-    while(1) {
-        memset(message, 0, 500);
-	//READSIZE = read(cs,message,500);
-	READSIZE = recv(cs , message , 2000 , 0);
-        printf("Client said: %s\n", message);
-        //puts(message);
-	write(cs , "Say something else.\n" , strlen("Say something else.\n"));
+    file = fopen("receivedFile", "wb");
+    if (file == NULL) {
+        printf("Error creating file");
+        return 1;
     }
- 
-    if(READSIZE == 0)
-    {
+
+    while (recv(clientSocket, fileBuffer, FILE_BUFFER_SIZE, 0) > 0) {
+        fputs(fileBuffer, file);
+    }
+
+    if(READSIZE == 0) {
         puts("Client disconnected");
         fflush(stdout);
-    }
-    else if(READSIZE == -1)
-    {
+    } else if(READSIZE == -1) {
         perror("read error");
     }
      
