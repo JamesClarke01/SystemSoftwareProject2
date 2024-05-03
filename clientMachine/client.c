@@ -35,9 +35,9 @@ int main(int argc , char *argv[])
     int fd;
     struct stat fileStat;
     char fileSize[256];
-    int sent_bytes = 0;
+    int sentBytes = 0;
     long int offset;
-    int remain_data;
+    int remainData;
 
     if (argc != 2) {
         printf("Invalid number of command line arguments entered\n");
@@ -88,14 +88,14 @@ int main(int argc , char *argv[])
 
 
     offset = 0;
-    remain_data = fileStat.st_size;
+    remainData = fileStat.st_size;
 
     /* Sending file data */
-    while (((sent_bytes = sendfile(SID, fd, &offset, BUFSIZ)) > 0) && (remain_data > 0))
+    while (((sentBytes = sendfile(SID, fd, &offset, BUFSIZ)) > 0) && (remainData > 0))
     {
-        fprintf(stdout, "1. Server sent %d bytes, Offset: %ld, Remaining data: %d\n", sent_bytes, offset, remain_data);
-        remain_data -= sent_bytes;
-        fprintf(stdout, "2. Server sent %d bytes, Offset: %ld, Remaining data: %d\n", sent_bytes, offset, remain_data);
+        fprintf(stdout, "1. Server sent %d bytes, Offset: %ld, Remaining data: %d\n", sentBytes, offset, remainData);
+        remainData -= sentBytes;
+        fprintf(stdout, "2. Server sent %d bytes, Offset: %ld, Remaining data: %d\n", sentBytes, offset, remainData);
     }
 
 

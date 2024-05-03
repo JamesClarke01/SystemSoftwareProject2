@@ -19,7 +19,7 @@ int main(int argc , char *argv[])
     FILE* file;
     int fileSize;
     ssize_t len;
-    int remain_data = 0;
+    int remainData = 0;
 
     struct sockaddr_in server , client;
     char message[500];
@@ -76,13 +76,13 @@ int main(int argc , char *argv[])
         return 1;
     }  
 
-    remain_data = fileSize;
+    remainData = fileSize;
 
-    while ((remain_data > 0) && ((len = recv(clientSocket, buffer, BUFSIZ, 0)) > 0))
+    while ((remainData > 0) && ((len = recv(clientSocket, buffer, BUFSIZ, 0)) > 0))
     {
         fwrite(buffer, sizeof(char), len, file);
-        remain_data -= len;
-        fprintf(stdout, "Received %ld bytes, Remaning: %d bytes\n", len, remain_data);
+        remainData -= len;
+        fprintf(stdout, "Received %ld bytes, Remaning: %d bytes\n", len, remainData);
     }
    
     send(clientSocket, "File Transferred Successfully\n", strlen("File Transferred Successfully\n"), 0);
