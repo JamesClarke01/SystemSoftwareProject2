@@ -15,18 +15,6 @@
 
 #include "shared.h"
 
-#define PORT 8082
-#define SERVER_IP "127.0.0.1"
-#define FILE_BUFFER_SIZE 1024
-
-#define SALES_UID 1005
-#define MANUFACTURING_UID 1006
-#define DISTRIBUTION_UID 1007
-
-#define SALES_GID 1007
-#define MANUFACTURING_GID 1008
-#define DISTRIBUTION_GID 1009
-
 enum Department {
     SALES,
     DISTRIBUTION,
@@ -117,6 +105,25 @@ int connectToServer(int* SID) {
     return 0;
 }
 
+//Will return 0 if user has permission to transfer, 1 if not
+int canUserTransfer() {
+    uid_t uid = getuid(); //Get the current user's ID
+    
+    switch(uid) {
+        case SALES_UID:
+            return 0;
+            break;    
+        case DISTRIBUTION_UID:
+            return 0;
+            break;   
+        case MANUFACTURING_UID:
+            return 0;
+            break;      
+    }
+
+    return 1; 
+}
+
 int sendFile(int* SID, char* filePath) {
     int fd;
     struct stat fileStat;
@@ -173,7 +180,13 @@ int main(int argc , char *argv[])
         return 1;
     }
 
+    if (canUserTransfer() == 1) {
+        printf("User does not have permission to transfer\n");
+        return 1;
+    }
+
     if (connectToServer(&SID) == 1) {
+        printf("Cannot connect to server\n");
         return 1;
     }
 
