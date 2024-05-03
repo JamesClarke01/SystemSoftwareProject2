@@ -9,7 +9,7 @@
 #define FILE_BUFFER_SIZE 1024
 
 #define SALES_DIR "Sales"
-#define DISTRIBUTION_DIR "Distributin"
+#define DISTRIBUTION_DIR "Distribution"
 #define MANUFACTURING_DIR "Manufacturing"
 
 enum Department {
@@ -102,7 +102,7 @@ int receiveFile(int* clientSocket) {
     //Open file for writing
     file = fopen(filePath, "wb");
     if (file == NULL) {
-        printf("Error creating file");
+        printf("Error creating file\n");
         return 1;
     }  
 
@@ -128,27 +128,28 @@ int main(int argc , char *argv[])
         return 1;
     }    
      
-    //Listen for a conection
-    listen(serverSocket,3); 
-    printf("Waiting for incoming connection from Client...\n");
+    while(1) {
+        //Listen for a conection
+        listen(serverSocket,3); 
+        printf("Waiting for incoming connection from Client...\n");
 
-    if (acceptIncomingConnection(&clientSocket, &serverSocket) == 1) {
-        return 1;
-    }
- 
-    if (receiveFile(&clientSocket) == 1) {
-        printf("Error receiving file");
-        return 1;
-    }
+        if (acceptIncomingConnection(&clientSocket, &serverSocket) == 1) {
+            return 1;
+        }
     
-    send(clientSocket, "File Transferred Successfully\n", strlen("File Transferred Successfully\n"), 0);
+        if (receiveFile(&clientSocket) == 1) {
+            printf("Error receiving file\n");
+            return 1;
+        }
+        
+        send(clientSocket, "File Transferred Successfully\n", strlen("File Transferred Successfully\n"), 0);
 
-    if(READSIZE == 0) {
-        puts("Client disconnected");
-        fflush(stdout);
-    } else if(READSIZE == -1) {
-        perror("read error");
+        if(READSIZE == 0) {
+            puts("Client disconnected");
+            fflush(stdout);
+        } else if(READSIZE == -1) {
+            perror("read error");
+        }
     }
-     
     return 0;
 }

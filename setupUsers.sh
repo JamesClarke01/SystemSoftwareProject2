@@ -1,7 +1,12 @@
 #!/bin/bash
 useradd SalesManager
-useradd ManufacturingManager
 useradd DistributionManager
+useradd ManufacturingManager
+
 groupadd Sales
 groupadd Distribution
 groupadd Manufacturing
+
+adduser SalesManager Sales
+adduser DistributionManager Distribution
+adduser ManufacturingManager Manufacturing
