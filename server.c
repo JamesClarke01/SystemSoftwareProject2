@@ -6,20 +6,12 @@
 #include <unistd.h>     //for write
 #include <pthread.h>
 
-#define PORT 8082
-#define FILE_BUFFER_SIZE 1024
+#include "shared.h"
 
 #define SALES_DIR "Sales"
 #define DISTRIBUTION_DIR "Distribution"
 #define MANUFACTURING_DIR "Manufacturing"
 
-#define SALES_UID 1005
-#define MANUFACTURING_UID 1006
-#define DISTRIBUTION_UID 1007
-
-#define SALES_GID 1007
-#define MANUFACTURING_GID 1008
-#define DISTRIBUTION_GID 1009
 
 enum Department {
     SALES,
@@ -173,7 +165,6 @@ int main(int argc , char *argv[])
             printf("Can't establish connection\n");
             continue;
         }
-
         
         // Create a thread to handle the new connection
         if (pthread_create(&threadID, NULL, handleClientTransfer, (void *)&clientSocket) != 0) {

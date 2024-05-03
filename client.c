@@ -13,6 +13,8 @@
 #include <fcntl.h>
 #include <sys/sendfile.h>
 
+#include "shared.h"
+
 #define PORT 8082
 #define SERVER_IP "127.0.0.1"
 #define FILE_BUFFER_SIZE 1024
@@ -71,7 +73,6 @@ enum Department getUserDepartment() {
     for (int i = 0; i < ngroups; i++) {
         struct group *grp = getgrgid(groups[i]);
         if (grp != NULL) {
-
               switch(grp->gr_gid) {
                 case SALES_GID:
                     userDepartment = SALES;
