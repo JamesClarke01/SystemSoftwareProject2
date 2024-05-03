@@ -64,7 +64,6 @@ enum Department getUserDepartment() {
         return 1;
     }
 
-
     for (int i = 0; i < ngroups; i++) {
         struct group *grp = getgrgid(groups[i]);
         if (grp != NULL) {

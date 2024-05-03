@@ -13,6 +13,14 @@
 #define DISTRIBUTION_DIR "Distribution"
 #define MANUFACTURING_DIR "Manufacturing"
 
+#define SALES_UID 1005
+#define MANUFACTURING_UID 1006
+#define DISTRIBUTION_UID 1007
+
+#define SALES_GID 1007
+#define MANUFACTURING_GID 1008
+#define DISTRIBUTION_GID 1009
+
 enum Department {
     SALES,
     DISTRIBUTION,
@@ -58,6 +66,7 @@ void* handleClientTransfer(void* clientSocketPtr) {
     enum Department userDepartment;
     char filePath[100];
     int READSIZE;  // Size of sockaddr_in for client connection
+    int chownRes;
 
     int clientSocket = *((int*)clientSocketPtr);
 
@@ -75,13 +84,18 @@ void* handleClientTransfer(void* clientSocketPtr) {
     fileSize = atoi(buffer);    
 
     //Make file path
-    if (userDepartment == SALES) {
-        strcpy(filePath, SALES_DIR);
-    } else if (userDepartment == DISTRIBUTION) {
-        strcpy(filePath, DISTRIBUTION_DIR);
-    } else if (userDepartment == MANUFACTURING) {
-        strcpy(filePath, MANUFACTURING_DIR);
+    switch(userDepartment) {
+        case SALES:
+            strcpy(filePath, SALES_DIR);
+            break;    
+        case DISTRIBUTION:
+            strcpy(filePath, DISTRIBUTION_DIR);
+            break;   
+        case MANUFACTURING:
+            strcpy(filePath, MANUFACTURING_DIR);
+            break;  
     }
+
     strcat(filePath, "/");
     strcat(filePath, fileName);
 
@@ -100,9 +114,25 @@ void* handleClientTransfer(void* clientSocketPtr) {
         fprintf(stdout, "Received %ld bytes, Remaning: %d bytes\n", len, remainData);
     }
 
-    sleep(15);
+   //sleep(15);
 
     send(clientSocket, "File Transferred Successfully\n", strlen("File Transferred Successfully\n"), 0);
+
+    //Set file owner
+    switch(userDepartment) {
+        case SALES:
+            chownRes = chown(filePath, SALES_UID, SALES_GID);
+            break;    
+        case DISTRIBUTION:
+            chownRes = chown(filePath, DISTRIBUTION_UID, DISTRIBUTION_GID);
+            break;   
+        case MANUFACTURING:
+            chownRes = chown(filePath, MANUFACTURING_UID, MANUFACTURING_GID);
+            break;  
+    }
+    if(chownRes != 0) {
+        printf("Error changing file ownership\n");
+    }
 
     if(READSIZE == 0) {
         puts("Client disconnected");
