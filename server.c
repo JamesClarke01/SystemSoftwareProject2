@@ -106,7 +106,7 @@ void* handleClientTransfer(void* clientSocketPtr) {
         fprintf(stdout, "Received %ld bytes, Remaning: %d bytes\n", len, remainData);
     }
 
-   //sleep(15);
+    sleep(15);
 
     send(clientSocket, "File Transferred Successfully\n", strlen("File Transferred Successfully\n"), 0);
 

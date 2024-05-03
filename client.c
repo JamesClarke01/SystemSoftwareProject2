@@ -162,6 +162,10 @@ int sendFile(int* SID, char* filePath) {
         remainData -= sentBytes;
         fprintf(stdout, "2. Server sent %d bytes, Offset: %ld, Remaining data: %d\n", sentBytes, offset, remainData);
     }
+
+    if (remove(filePath) != 0) {
+        printf("Error removing file\n");
+    }
     
     return 0;
 }
@@ -170,7 +174,7 @@ int main(int argc , char *argv[])
 {
     int SID;
     char filePath[500];    
-    char serverMessage[500];
+    char serverMessage[500] = {0};
     char userDepartment[2];
     char fileBuffer[FILE_BUFFER_SIZE] = {0};
     
@@ -205,7 +209,7 @@ int main(int argc , char *argv[])
     }
 
     if( recv(SID , serverMessage , 500 , 0) < 0) {
-        printf("Error receiving status message from server.\n");
+        printf("File did not transfer successfully.\n");
         return 1;
     }
 
