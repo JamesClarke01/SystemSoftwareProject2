@@ -1,10 +1,11 @@
 #include <stdio.h>      // for IO
+#include <stdlib.h>
 #include <string.h>     //for strlen
 #include <sys/socket.h> // for socket
 #include <arpa/inet.h>  //for inet_addr
 #include <unistd.h>     //for write
 
-#define PORT 8082
+#define PORT 8081
 #define FILE_BUFFER_SIZE 1024
 
 int main(int argc , char *argv[])
@@ -13,9 +14,12 @@ int main(int argc , char *argv[])
     int clientSocket; // Client Socket
     int connSize; // Size of struct 
     int READSIZE;  // Size of sockaddr_in for client connection
-    char fileBuffer[FILE_BUFFER_SIZE] = {0};
+    char buffer[BUFSIZ];
     char fileName[FILE_BUFFER_SIZE];
     FILE* file;
+    int fileSize;
+    ssize_t len;
+    int remain_data = 0;
 
     struct sockaddr_in server , client;
     char message[500];
@@ -61,6 +65,10 @@ int main(int argc , char *argv[])
     //Receive file name
     recv(clientSocket, fileName, FILE_BUFFER_SIZE, 0);
 
+    //Recevie file size
+    recv(clientSocket, buffer, BUFSIZ, 0);
+    fileSize = atoi(buffer);
+
     //Open file for writing
     file = fopen(fileName, "wb");
     if (file == NULL) {
@@ -68,10 +76,16 @@ int main(int argc , char *argv[])
         return 1;
     }  
 
-    //Receive file line by line
-    while (recv(clientSocket, fileBuffer, FILE_BUFFER_SIZE, 0) > 0) {
-        fputs(fileBuffer, file);
+    remain_data = fileSize;
+
+    while ((remain_data > 0) && ((len = recv(clientSocket, buffer, BUFSIZ, 0)) > 0))
+    {
+        fwrite(buffer, sizeof(char), len, file);
+        remain_data -= len;
+        fprintf(stdout, "Received %ld bytes, Remaning: %d bytes\n", len, remain_data);
     }
+   
+    send(clientSocket, "File Transferred Successfully\n", strlen("File Transferred Successfully\n"), 0);
 
     if(READSIZE == 0) {
         puts("Client disconnected");

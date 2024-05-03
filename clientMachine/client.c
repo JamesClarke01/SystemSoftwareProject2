@@ -4,10 +4,15 @@
 #include <arpa/inet.h> //for inet_addr
 #include <unistd.h>    //for write
 
-#define PORT 8082
+//For files
+#include <sys/stat.h> //For getting file size
+#include <sys/types.h>
+#include <fcntl.h>
+#include <sys/sendfile.h>
+
+#define PORT 8081
 #define SERVER_IP "127.0.0.1"
 #define FILE_BUFFER_SIZE 1024
-
 
 //Extracts file name from path
 const char* getFileName(const char* path) {
@@ -27,7 +32,12 @@ int main(int argc , char *argv[])
     char fileName[30];
     char serverMessage[500];
     char fileBuffer[FILE_BUFFER_SIZE] = {0};
-    FILE* file;
+    int fd;
+    struct stat fileStat;
+    char fileSize[256];
+    int sent_bytes = 0;
+    long int offset;
+    int remain_data;
 
     if (argc != 2) {
         printf("Invalid number of command line arguments entered\n");
@@ -58,21 +68,44 @@ int main(int argc , char *argv[])
     printf("Connected to server ok!!\n");
         
     //Reading file
-    file = fopen(filePath, "rb");
-    if (file == NULL) {
-        printf("File path invalid.\n");
-        return 1;
+    fd = open(filePath, O_RDONLY);
+    if (fd == -1) {
+        printf("File path invalid\n");
     }
-    
-    
+
+
+    //Get file stats
+    if (fstat(fd, &fileStat) < 0) {
+        printf("Error getting file stats\n");
+    } 
+
     //Send file name
     send(SID, getFileName(filePath), FILE_BUFFER_SIZE, 0);
     
+    
+    sprintf(fileSize, "%ld", fileStat.st_size); //Put file size in a buffer
+    send(SID, fileSize, sizeof(fileSize), 0); //send file size
 
-    //Send file data line by line
-    while (fgets(fileBuffer, FILE_BUFFER_SIZE, file) != NULL) {
-        send(SID, fileBuffer, strlen(fileBuffer), 0);
-    }    
+
+    offset = 0;
+    remain_data = fileStat.st_size;
+
+    /* Sending file data */
+    while (((sent_bytes = sendfile(SID, fd, &offset, BUFSIZ)) > 0) && (remain_data > 0))
+    {
+        fprintf(stdout, "1. Server sent %d bytes, Offset: %ld, Remaining data: %d\n", sent_bytes, offset, remain_data);
+        remain_data -= sent_bytes;
+        fprintf(stdout, "2. Server sent %d bytes, Offset: %ld, Remaining data: %d\n", sent_bytes, offset, remain_data);
+    }
+
+
+    if( recv(SID , serverMessage , 500 , 0) < 0)
+    {
+        printf("IO error.\n");
+        //break;
+    }
+
+    printf("%s\n", serverMessage);
      
     close(SID);
     return 0;
