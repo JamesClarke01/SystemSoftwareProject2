@@ -46,23 +46,6 @@ int bindServerSocket(int *serverSocket) {
     return 0;
 }
 
-int acceptIncomingConnection(int* clientSocket, int* serverSocket) {
-    struct sockaddr_in client;
-    int connSize; // Size of struct 
-    
-    //Accept and incoming connection
-    connSize = sizeof(struct sockaddr_in);
-    //accept connection from an incoming client
-    *clientSocket = accept(*serverSocket, (struct sockaddr *)&client, (socklen_t*)&connSize);
-    if (*clientSocket < 0) {
-        perror("Can't establish connection");
-        return 1;
-    } else {
-    	printf("Connection from client accepted.\n");
-    }
-    return 0;
-}
-
 int receiveFile(int* clientSocket) {
     char fileName[FILE_BUFFER_SIZE];
     char buffer[BUFSIZ];
@@ -123,6 +106,8 @@ int main(int argc , char *argv[])
     int clientSocket; // Client Socket
     int READSIZE;  // Size of sockaddr_in for client connection
     char message[500];
+    struct sockaddr_in client;
+    int connSize; // Size of struct 
         
     if (bindServerSocket(&serverSocket) == 1) {
         return 1;
@@ -132,8 +117,13 @@ int main(int argc , char *argv[])
         //Listen for a conection
         listen(serverSocket,3); 
         printf("Waiting for incoming connection from Client...\n");
+    
+        //Accept and incoming connection
+        connSize = sizeof(struct sockaddr_in);
 
-        if (acceptIncomingConnection(&clientSocket, &serverSocket) == 1) {
+        //accept connection from an incoming client
+        if ((clientSocket = accept(serverSocket, (struct sockaddr *)&client, (socklen_t*)&connSize)) < 0){
+            printf("Can't establish connection\n");
             return 1;
         }
     
