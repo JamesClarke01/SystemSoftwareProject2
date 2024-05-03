@@ -4,6 +4,7 @@
 #include <sys/socket.h> // for socket
 #include <arpa/inet.h>  //for inet_addr
 #include <unistd.h>     //for write
+#include <pthread.h>
 
 #define PORT 8081
 #define FILE_BUFFER_SIZE 1024
@@ -46,7 +47,7 @@ int bindServerSocket(int *serverSocket) {
     return 0;
 }
 
-int receiveFile(int* clientSocket) {
+void* handleClientTransfer(void* clientSocketPtr) {
     char fileName[FILE_BUFFER_SIZE];
     char buffer[BUFSIZ];
     FILE* file;
@@ -56,19 +57,21 @@ int receiveFile(int* clientSocket) {
     char department[2];
     enum Department userDepartment;
     char filePath[100];
+    int READSIZE;  // Size of sockaddr_in for client connection
+
+    int clientSocket = *((int*)clientSocketPtr);
 
     //Receive department and set directory
-    if(recv(*clientSocket , department , 500 , 0) < 0) {
+    if(recv(clientSocket , department , 500 , 0) < 0) {
         printf("Error receiving status message from server.\n");
-        return 1;
     }
     userDepartment = atoi(department);
 
     //Receive file name
-    recv(*clientSocket, fileName, FILE_BUFFER_SIZE, 0);
+    recv(clientSocket, fileName, FILE_BUFFER_SIZE, 0);
 
     //Recevie file size
-    recv(*clientSocket, buffer, BUFSIZ, 0);
+    recv(clientSocket, buffer, BUFSIZ, 0);
     fileSize = atoi(buffer);    
 
     //Make file path
@@ -86,28 +89,41 @@ int receiveFile(int* clientSocket) {
     file = fopen(filePath, "wb");
     if (file == NULL) {
         printf("Error creating file\n");
-        return 1;
     }  
 
     //Receive file
     remainData = fileSize;
-    while ((remainData > 0) && ((len = recv(*clientSocket, buffer, BUFSIZ, 0)) > 0))
+    while ((remainData > 0) && ((len = recv(clientSocket, buffer, BUFSIZ, 0)) > 0))
     {
         fwrite(buffer, sizeof(char), len, file);
         remainData -= len;
         fprintf(stdout, "Received %ld bytes, Remaning: %d bytes\n", len, remainData);
     }
 
+    //sleep(15);
+
+    send(clientSocket, "File Transferred Successfully\n", strlen("File Transferred Successfully\n"), 0);
+
+    if(READSIZE == 0) {
+        puts("Client disconnected");
+        fflush(stdout);
+    } else if(READSIZE == -1) {
+        perror("read error");
+    }
+
+    close(clientSocket);
+
+    return NULL;
 }
 
 int main(int argc , char *argv[])
 {
     int serverSocket; // socket descriptor
     int clientSocket; // Client Socket
-    int READSIZE;  // Size of sockaddr_in for client connection
     char message[500];
     struct sockaddr_in client;
     int connSize; // Size of struct 
+    pthread_t threadID;
         
     if (bindServerSocket(&serverSocket) == 1) {
         return 1;
@@ -124,22 +140,21 @@ int main(int argc , char *argv[])
         //accept connection from an incoming client
         if ((clientSocket = accept(serverSocket, (struct sockaddr *)&client, (socklen_t*)&connSize)) < 0){
             printf("Can't establish connection\n");
-            return 1;
+            continue;
         }
-    
-        if (receiveFile(&clientSocket) == 1) {
-            printf("Error receiving file\n");
-            return 1;
-        }
-        
-        send(clientSocket, "File Transferred Successfully\n", strlen("File Transferred Successfully\n"), 0);
 
-        if(READSIZE == 0) {
-            puts("Client disconnected");
-            fflush(stdout);
-        } else if(READSIZE == -1) {
-            perror("read error");
+        handleClientTransfer(&clientSocket);
+
+        /*
+        // Create a thread to handle the new connection
+        if (pthread_create(&threadID, NULL, handleClientTransfer, (void *)&clientSocket) != 0) {
+            perror("pthread_create");
+            close(clientSocket); // Close the socket if thread creation fails
+            continue; // Skip to the next iteration
         }
+
+        pthread_detach(threadID);
+        */
     }
     return 0;
 }
