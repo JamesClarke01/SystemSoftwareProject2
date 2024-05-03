@@ -8,6 +8,16 @@
 #define PORT 8081
 #define FILE_BUFFER_SIZE 1024
 
+#define SALES_DIR "Sales"
+#define DISTRIBUTION_DIR "Distributin"
+#define MANUFACTURING_DIR "Manufacturing"
+
+enum Department {
+    SALES,
+    DISTRIBUTION,
+    MANUFACTURING
+};
+
 int bindServerSocket(int *serverSocket) {
     struct sockaddr_in server;
 
@@ -60,16 +70,37 @@ int receiveFile(int* clientSocket) {
     int fileSize;
     ssize_t len;
     int remainData = 0;
+    char department[2];
+    enum Department userDepartment;
+    char filePath[100];
+
+    //Receive department and set directory
+    if(recv(*clientSocket , department , 500 , 0) < 0) {
+        printf("Error receiving status message from server.\n");
+        return 1;
+    }
+    userDepartment = atoi(department);
 
     //Receive file name
     recv(*clientSocket, fileName, FILE_BUFFER_SIZE, 0);
 
     //Recevie file size
     recv(*clientSocket, buffer, BUFSIZ, 0);
-    fileSize = atoi(buffer);
+    fileSize = atoi(buffer);    
+
+    //Make file path
+    if (userDepartment == SALES) {
+        strcpy(filePath, SALES_DIR);
+    } else if (userDepartment == DISTRIBUTION) {
+        strcpy(filePath, DISTRIBUTION_DIR);
+    } else if (userDepartment == MANUFACTURING) {
+        strcpy(filePath, MANUFACTURING_DIR);
+    }
+    strcat(filePath, "/");
+    strcat(filePath, fileName);
 
     //Open file for writing
-    file = fopen(fileName, "wb");
+    file = fopen(filePath, "wb");
     if (file == NULL) {
         printf("Error creating file");
         return 1;
@@ -85,7 +116,6 @@ int receiveFile(int* clientSocket) {
     }
 
 }
-
 
 int main(int argc , char *argv[])
 {
@@ -105,7 +135,7 @@ int main(int argc , char *argv[])
     if (acceptIncomingConnection(&clientSocket, &serverSocket) == 1) {
         return 1;
     }
-
+ 
     if (receiveFile(&clientSocket) == 1) {
         printf("Error receiving file");
         return 1;

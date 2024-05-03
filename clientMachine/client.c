@@ -3,6 +3,9 @@
 #include <sys/socket.h>
 #include <arpa/inet.h> //for inet_addr
 #include <unistd.h>    //for write
+#include <grp.h>
+#include <unistd.h>
+#include <stdlib.h> //Malloc & Free
 
 //For files
 #include <sys/stat.h> //For getting file size
@@ -14,6 +17,16 @@
 #define SERVER_IP "127.0.0.1"
 #define FILE_BUFFER_SIZE 1024
 
+#define SALES_GROUP_NAME "Sales"
+#define DISTRIBUTION_GROUP_NAME "Distribution"
+#define MANUFACTURING_GROUP_NAME "Manufacturing"
+
+enum Department {
+    SALES,
+    DISTRIBUTION,
+    MANUFACTURING
+};
+
 //Extracts file name from path
 const char* getFileName(const char* path) {
     const char* filename = strrchr(path, '/'); //Find last occurance of '/'
@@ -22,6 +35,51 @@ const char* getFileName(const char* path) {
         return path;
     else //else return the file name
         return filename + 1;
+}
+
+//Returns the department the current user belongs to by checking user group
+enum Department getUserDepartment() {
+    
+    enum Department userDepartment = -1;
+    uid_t uid = getuid(); //Get the current user's ID
+
+    //Get the number of groups the user belongs to
+    int ngroups = getgroups(0, NULL);
+    if (ngroups < 0) {
+        perror("getgroups");
+        return 1;
+    }
+
+    //Allocate memory for the array of group IDs
+    gid_t *groups = malloc(ngroups * sizeof(gid_t));
+    if (groups == NULL) {
+        perror("malloc");
+        return 1;
+    }
+
+    //Get Groups of user
+    if (getgroups(ngroups, groups) < 0) {
+        perror("getgroups");
+        free(groups);
+        return 1;
+    }
+
+
+    for (int i = 0; i < ngroups; i++) {
+        struct group *grp = getgrgid(groups[i]);
+        if (grp != NULL) {
+            if(strcmp(grp->gr_name, SALES_GROUP_NAME) == 0) {
+                userDepartment = SALES;
+            } else if (strcmp(grp->gr_name, DISTRIBUTION_GROUP_NAME) == 0) {
+                userDepartment = DISTRIBUTION;
+            } else if (strcmp(grp->gr_name, MANUFACTURING_GROUP_NAME) == 0) {
+                userDepartment = MANUFACTURING;
+            }
+        }
+    }
+
+    free(groups);
+    return userDepartment;
 }
 
 int connectToServer(int* SID) {
@@ -92,15 +150,14 @@ int sendFile(int* SID, char* filePath) {
     return 0;
 }
 
-
 int main(int argc , char *argv[])
 {
     int SID;
-    char filePath[500];
-    char fileName[30];
+    char filePath[500];    
     char serverMessage[500];
+    char userDepartment[2];
     char fileBuffer[FILE_BUFFER_SIZE] = {0};
-
+    
 
     if (argc != 2) {
         printf("Invalid number of command line arguments entered\n");
@@ -111,9 +168,17 @@ int main(int argc , char *argv[])
         return 1;
     }
 
+    //Send user department
+    if (getUserDepartment() == -1) {
+        printf("User does not belong to a valid department\n");
+        return 1;
+    }
+    sprintf(userDepartment, "%d", getUserDepartment());
+    send(SID, userDepartment, 2, 0);
+    
     strcpy(filePath, argv[1]);
     if (sendFile(&SID, filePath) == 1) {
-        printf("Error sending file");
+        printf("Error sending file\n");
         return 1;
     }
 
