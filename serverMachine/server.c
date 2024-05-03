@@ -6,7 +6,7 @@
 #include <unistd.h>     //for write
 #include <pthread.h>
 
-#define PORT 8081
+#define PORT 8082
 #define FILE_BUFFER_SIZE 1024
 
 #define SALES_DIR "Sales"
@@ -100,7 +100,7 @@ void* handleClientTransfer(void* clientSocketPtr) {
         fprintf(stdout, "Received %ld bytes, Remaning: %d bytes\n", len, remainData);
     }
 
-    //sleep(15);
+    sleep(15);
 
     send(clientSocket, "File Transferred Successfully\n", strlen("File Transferred Successfully\n"), 0);
 
@@ -111,6 +111,7 @@ void* handleClientTransfer(void* clientSocketPtr) {
         perror("read error");
     }
 
+    fclose(file);
     close(clientSocket);
 
     return NULL;
@@ -143,9 +144,7 @@ int main(int argc , char *argv[])
             continue;
         }
 
-        handleClientTransfer(&clientSocket);
-
-        /*
+        
         // Create a thread to handle the new connection
         if (pthread_create(&threadID, NULL, handleClientTransfer, (void *)&clientSocket) != 0) {
             perror("pthread_create");
@@ -154,7 +153,7 @@ int main(int argc , char *argv[])
         }
 
         pthread_detach(threadID);
-        */
+        
     }
     return 0;
 }

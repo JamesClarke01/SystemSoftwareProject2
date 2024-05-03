@@ -13,7 +13,7 @@
 #include <fcntl.h>
 #include <sys/sendfile.h>
 
-#define PORT 8081
+#define PORT 8082
 #define SERVER_IP "127.0.0.1"
 #define FILE_BUFFER_SIZE 1024
 
