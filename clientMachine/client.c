@@ -17,9 +17,13 @@
 #define SERVER_IP "127.0.0.1"
 #define FILE_BUFFER_SIZE 1024
 
-#define SALES_GROUP_NAME "Sales"
-#define DISTRIBUTION_GROUP_NAME "Distribution"
-#define MANUFACTURING_GROUP_NAME "Manufacturing"
+#define SALES_UID 1005
+#define MANUFACTURING_UID 1006
+#define DISTRIBUTION_UID 1007
+
+#define SALES_GID 1007
+#define MANUFACTURING_GID 1008
+#define DISTRIBUTION_GID 1009
 
 enum Department {
     SALES,
@@ -67,12 +71,17 @@ enum Department getUserDepartment() {
     for (int i = 0; i < ngroups; i++) {
         struct group *grp = getgrgid(groups[i]);
         if (grp != NULL) {
-            if(strcmp(grp->gr_name, SALES_GROUP_NAME) == 0) {
-                userDepartment = SALES;
-            } else if (strcmp(grp->gr_name, DISTRIBUTION_GROUP_NAME) == 0) {
-                userDepartment = DISTRIBUTION;
-            } else if (strcmp(grp->gr_name, MANUFACTURING_GROUP_NAME) == 0) {
-                userDepartment = MANUFACTURING;
+
+              switch(grp->gr_gid) {
+                case SALES_GID:
+                    userDepartment = SALES;
+                    break;    
+                case DISTRIBUTION_GID:
+                    userDepartment = DISTRIBUTION;
+                    break;   
+                case MANUFACTURING_GID:
+                    userDepartment = MANUFACTURING;
+                    break;      
             }
         }
     }
